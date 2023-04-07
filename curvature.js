@@ -7,11 +7,11 @@ let CONFIG = null;
 let COMPONENTS = null;
 
 const directoryIsIncluded = (directory) => {
-  return !/components|output/.test(directory);
+  return !/components|output|resources|.git/.test(directory);
 }
 
 const fileIsIncluded = (file) => {
-  return !/curvature-config\.json/.test(file);
+  return !/curvature-config\.json|.gitignore/.test(file);
 }
 
 const getComponentTemplate = (tag) => {
@@ -46,6 +46,9 @@ const parseCustomTags = (file) => {
 
   dataLines.forEach(line => {
 
+    // This assumes that the opening and closing tag for the component
+    // are on the same line. If they're on broken up lines, then this
+    // will insert the template content twice... need to address this
     if (line.match(customTagRegex)) {
 
       const spaces = getSpaces(line);

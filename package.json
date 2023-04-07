@@ -2,7 +2,7 @@
   "name": "curvature",
   "version": "1.0.0",
   "description": "A preprocessor program that will look for custom tags and replace with premade templates",
-  "main": "circular.js",
+  "main": "curvature.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
