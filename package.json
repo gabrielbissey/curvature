@@ -1,0 +1,14 @@
+{
+  "name": "curvature",
+  "version": "1.0.0",
+  "description": "A preprocessor program that will look for custom tags and replace with premade templates",
+  "main": "circular.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "dope"
+  ],
+  "author": "Gabriel Bissey",
+  "license": "ISC"
+}
