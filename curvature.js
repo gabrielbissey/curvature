@@ -16,12 +16,19 @@ const fileIsIncluded = (file) => {
 
 const getComponentTemplate = (tag) => {
   const componentNameRegex = /(?<=<g-).*(?=><)/;
-
   const componentName = tag.match(componentNameRegex)[0];
+  return fs.readFileSync(COMPONENTS[componentName], 'utf-8');
+}
 
-  const template = fs.readFileSync(COMPONENTS[componentName], 'utf8');
+const getSpaces = (line) => {
+  const chars = line.split('')
+      let spaces = '';
 
-  return template;
+      chars.forEach(c => {
+        if (c === ' ') spaces += ' ';
+      });
+
+      return spaces;
 }
 
 // 2. Look for custom tags
@@ -32,14 +39,34 @@ const parseCustomTags = (file) => {
   // Look for tags, and parse out relevant name, that follow
   // the format "<g-tag name></g-tag name>". This regex will
   // return exclusively the "tag name" part of that tag.
-  const customTagRegex = /<g-.+><\/g-.+>/;
-  return data.replace(customTagRegex, (match) => getComponentTemplate(match));
+  const customTagRegex = /<g-.+><\/g-.+>/g;
+  const dataLines = data.split('\n');
+  // iterate through file lines
+  let outputLines = [];
+
+  dataLines.forEach(line => {
+
+    if (line.match(customTagRegex)) {
+
+      const spaces = getSpaces(line);
+      const template = getComponentTemplate(line);
+      const templateLines = template.split('\n');
+
+      templateLines.forEach(tLine => {
+        outputLines.push(spaces + tLine);
+      });
+    } else {
+      outputLines.push(line);
+    }
+  });
+
+  return outputLines.join('\n');
 }
 
 const getOutputFilePath = (path) => {
-  const dirNestedInBaseDirRegex = new RegExp(`(?<=${CONFIG.baseDir}).+(?=\/.+\..+)`)
   // Find name of directory(ies) that are nested under the base dir to be able to
   // replicate directory structure in output directory
+  const dirNestedInBaseDirRegex = new RegExp(`(?<=${CONFIG.baseDir}).+(?=\/.+\..+)`)
 
   const match = path.match(dirNestedInBaseDirRegex);
 
