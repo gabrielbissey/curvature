@@ -11,9 +11,6 @@ let COMPONENTS = null;
 
 const directoryIsIncluded = (directory) => {
   return !/components|output|.git/.test(directory);
-  // resources is included in this exclusion list because curvature
-  // doesn't properly copy over images.
-  // return !/components|output|resources|.git/.test(directory);
 }
 
 const fileIsIncluded = (file) => {
