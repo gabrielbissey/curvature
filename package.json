@@ -10,5 +10,8 @@
     "dope"
   ],
   "author": "Gabriel Bissey",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "mime": "^3.0.0"
+  }
 }

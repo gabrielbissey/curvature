@@ -1,13 +1,19 @@
 // Write a pre-processor program that will look for custom tags in a directory
-// and will replace the tags with predefined HTML snippets
+// and will replace the tags with predefined HTML snippets.
+//
+// I'm pretty proud of this program, not gonna lie.
 
 const fs = require('fs');
+const mime = require('mime');
 
 let CONFIG = null;
 let COMPONENTS = null;
 
 const directoryIsIncluded = (directory) => {
-  return !/components|output|resources|.git/.test(directory);
+  return !/components|output|.git/.test(directory);
+  // resources is included in this exclusion list because curvature
+  // doesn't properly copy over images.
+  // return !/components|output|resources|.git/.test(directory);
 }
 
 const fileIsIncluded = (file) => {
@@ -80,7 +86,7 @@ const getOutputFilePath = (path) => {
   return CONFIG.outputDir;
 }
 
-const writeToOutputDir = (path, fileName, content) => {
+const writeToOutputDir = (path, fileName, content, encoding = 'utf-8') => {
   
   if (fileIsIncluded(fileName)) {
     // Need to get directoy path beyond basedir to replicate path
@@ -96,9 +102,25 @@ const writeToOutputDir = (path, fileName, content) => {
 
     const outputFile = `${outputFilePath}/${fileName}`;
   
-    fs.writeFileSync(outputFile, content);
+    fs.writeFileSync(outputFile, content, encoding);
+  }
+}
+
+const readFile = (filePath) => {
+  // mime.getType returns something like "application/json", but I only
+  // care about the "broad" type e.g. "application" so that I know how
+  // to read the file.
+  const broadMimeType = mime.getType(filePath).split('/')[0];
+
+  if (broadMimeType === 'image') {
+    return [fs.readFileSync(filePath, 'binary'), 'binary'];
   }
 
+  // Assuming that anything that is not an image is encoded in utf-8
+  // is absurdly false, and this code will absolutely lead to bugs...
+  // But those are bugs for future Gabriel to deal with ;). This is
+  // good enough for present Gabriel.
+  return [fs.readFileSync(filePath, 'utf-8'), 'utf-8'];
 }
 
 const traverseFiles = (baseDir = CONFIG.baseDir) => {
@@ -118,10 +140,11 @@ const traverseFiles = (baseDir = CONFIG.baseDir) => {
         // Now we need to open the file, read it, and parse for custom tags
         newContent = parseCustomTags(fullPath);
       } else {
-        newContent = fs.readFileSync(fullPath, 'utf-8');
+        // I don't love this code. Should probably clean up... later.
+        [newContent, encoding] = readFile(fullPath);
       }
 
-      writeToOutputDir(fullPath, file, newContent);
+      writeToOutputDir(fullPath, file, newContent, encoding);
 
     } else if (fs.lstatSync(fullPath).isDirectory()) {
       // We don't want to search-and-replace the code in our components
@@ -130,13 +153,6 @@ const traverseFiles = (baseDir = CONFIG.baseDir) => {
       }
     }
   });
-}
-
-const getFileNameAndExtension = (fullFilePath) => {
-  const filePathArr = fullFilePath.split('/');
-  const fileNameAndExtension = filePathArr[filePathArr.length - 1];
-  
-  return fileNameAndExtension.split('.');
 }
 
 const isHTMLFile = (file) => {
