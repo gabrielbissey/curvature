@@ -153,7 +153,7 @@ const traverseFiles = (baseDir = CONFIG.baseDir) => {
         }
       }
 
-      if (newContent !== null) {
+      if (newContent !== null && newContent !== undefined) {
         writeToOutputDir(fullPath, file, newContent, encoding);
       }
 
