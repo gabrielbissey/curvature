@@ -104,10 +104,16 @@ const writeToOutputDir = (path, fileName, content, encoding = 'utf-8') => {
 }
 
 const readFile = (filePath) => {
+  const mimeType = mime.getType(filePath);
+
+  if (mimeType === null || mimeType === undefined) {
+    return null;
+  }
+
   // mime.getType returns something like "application/json", but I only
   // care about the "broad" type e.g. "application" so that I know how
   // to read the file.
-  const broadMimeType = mime.getType(filePath).split('/')[0];
+  const broadMimeType = mimeType.split('/')[0];
 
   if (broadMimeType === 'image') {
     return [fs.readFileSync(filePath, 'binary'), 'binary'];
@@ -130,18 +136,26 @@ const traverseFiles = (baseDir = CONFIG.baseDir) => {
     const fullPath = `${baseDir}/${file}`;
 
     if (fs.lstatSync(fullPath).isFile()) {
-
       let newContent;
+      let encoding;
 
       if (isHTMLFile(file)) {
         // Now we need to open the file, read it, and parse for custom tags
         newContent = parseCustomTags(fullPath);
       } else {
-        // I don't love this code. Should probably clean up... later.
-        [newContent, encoding] = readFile(fullPath);
+        // I don't love how readFile() returns the contents and the encoding...
+        // Idk maybe not that bad, but I feel like it could be better.
+        const contentAndEncoding = readFile(fullPath);
+
+        if (contentAndEncoding) {
+          newContent = contentAndEncoding[0];
+          encoding = contentAndEncoding[1];
+        }
       }
 
-      writeToOutputDir(fullPath, file, newContent, encoding);
+      if (newContent !== null) {
+        writeToOutputDir(fullPath, file, newContent, encoding);
+      }
 
     } else if (fs.lstatSync(fullPath).isDirectory()) {
       // We don't want to search-and-replace the code in our components
