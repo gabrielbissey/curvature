@@ -1,7 +1,12 @@
 const fs = require('fs');
 const mime = require('mime');
 
-const { isHTMLFile, directoryIsIncluded, fileIsIncluded } = require('./utilities')
+const {
+  isHTMLFile, directoryIsIncluded, fileIsIncluded, getSpaces, ensureDirectoriesExist
+} = require('./helper-files/utilities');
+const {
+  generateConfigMetadata, parseCurvatureConfigFile, initializeComponents
+} = require('./helper-files/config');
 
 let CONFIG = null;
 let COMPONENTS = null;
@@ -12,21 +17,8 @@ const getComponentTemplate = (tag) => {
   return fs.readFileSync(COMPONENTS[componentName], 'utf-8');
 }
 
-const getSpaces = (line) => {
-  const chars = line.split('')
-      let spaces = '';
-
-      // But what if they're tabs???
-      chars.forEach(c => {
-        if (c === ' ') spaces += ' ';
-      });
-
-      return spaces;
-}
-
 // 2. Look for custom tags
 const parseCustomTags = (file) => {
-  console.log(file);
   // Read the contents of the file
   const data = fs.readFileSync(file, 'utf-8');
 
@@ -122,8 +114,6 @@ const traverseFiles = (baseDir = CONFIG.baseDir) => {
   // async functions is darn-near impossibe
   const files = fs.readdirSync(baseDir);
 
-  console.log(files);
-
   files.forEach(file => {
 
     const fullPath = `${baseDir}/${file}`;
@@ -157,72 +147,16 @@ const traverseFiles = (baseDir = CONFIG.baseDir) => {
   });
 }
 
-const generateConfigMetadata = () => {
-  const config = {};
-
-  config.baseDir = process.argv[2];
-  config.configFile = `${config.baseDir}/curvature-config.json`
-  config.outputDir = `${config.baseDir}/output`;
-  config.componentsDir = `${config.baseDir}/components`;
-
-  CONFIG = config;
-}
-
-const ensureDirectoriesExist = () => {
-  try {
-    fs.accessSync(CONFIG.outputDir);
-  } catch {
-    fs.mkdirSync(CONFIG.outputDir);
-  }
-}
-
-const initializeComponents = (components) => {
-  const fullPathComponents = {};
-
-  Object.keys(components).forEach(key => {
-    fullPathComponents[key] = `${CONFIG.componentsDir}/${components[key]}`;
-  });
-
-  COMPONENTS = fullPathComponents;
-}
-
-const parseConfigFile = () => {
-
-  const parseConfig = (resolve, reject) => {
-    let file;
-  
-    try {
-      file = fs.readFileSync(CONFIG.configFile, 'utf-8');
-    } catch (e) {
-      console.log(`Unable to read ${CONFIG.configFile}: ${e}`);
-      reject();
-    }
-
-    const fileContents = JSON.parse(file);
-
-    try {
-
-      if (fileContents.components === undefined) {
-        throw new Error(`"components" property missing in ${CONFIG.configFile}`);
-      }
-
-      initializeComponents(fileContents.components);
-    } catch (e) {
-      console.log(`Error determining components: ${e}`);
-      reject();
-    }
-
-    resolve();
-  }
-
-  return new Promise((resolve, reject) => parseConfig(resolve, reject));
+const handleCurvatureConfigSuccess = (curvatureConfig) => {
+  COMPONENTS = initializeComponents(CONFIG.componentsDir, curvatureConfig.components);
+  traverseFiles();
 }
 
 const main = () => {
-  generateConfigMetadata();
+  CONFIG = generateConfigMetadata();
   ensureDirectoriesExist();
-  parseConfigFile()
-  .then(traverseFiles)
+  parseCurvatureConfigFile(CONFIG.configFile)
+  .then(handleCurvatureConfigSuccess)
   .catch(() => console.log('Unable to run Curvature in this project'));
 }
 
