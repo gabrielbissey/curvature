@@ -13,7 +13,7 @@ const fileIsIncluded = (file) => {
 }
 
 const getComponentTemplate = (tag) => {
-  const componentNameRegex = /(?<=<g-).*(?=><)/;
+  const componentNameRegex = /(?<=<curvature-).*(?=><)/;
   const componentName = tag.match(componentNameRegex)[0];
   return fs.readFileSync(COMPONENTS[componentName], 'utf-8');
 }
@@ -35,9 +35,9 @@ const parseCustomTags = (file) => {
   const data = fs.readFileSync(file, 'utf-8');
 
   // Look for tags, and parse out relevant name, that follow
-  // the format "<g-tag name></g-tag name>". This regex will
+  // the format "<curvature-tag name></curvature-tag name>". This regex will
   // return exclusively the "tag name" part of that tag.
-  const customTagRegex = /<g-.+><\/g-.+>/g;
+  const customTagRegex = /<curvature-.+><\/curvature-.+>/g;
   const dataLines = data.split('\n');
   // iterate through file lines
   let outputLines = [];
