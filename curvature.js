@@ -204,7 +204,7 @@ const parseConfigFile = () => {
     try {
       file = fs.readFileSync(CONFIG.configFile, 'utf-8');
     } catch (e) {
-      console.log(`Unable to read curvature-config.json: ${e}`);
+      console.log(`Unable to read ${CONFIG.configFile}: ${e}`);
       reject();
     }
 
@@ -213,7 +213,7 @@ const parseConfigFile = () => {
     try {
 
       if (fileContents.components === undefined) {
-        throw new Error('"components" property missing in curvature-config.json');
+        throw new Error(`"components" property missing in ${CONFIG.configFile}`);
       }
 
       initializeComponents(fileContents.components);
