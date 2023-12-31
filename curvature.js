@@ -1,8 +1,3 @@
-// Write a pre-processor program that will look for custom tags in a directory
-// and will replace the tags with predefined HTML snippets.
-//
-// I'm pretty proud of this program, not gonna lie.
-
 const fs = require('fs');
 const mime = require('mime');
 
@@ -172,7 +167,7 @@ const isHTMLFile = (file) => {
   return extension === 'html';
 }
 
-const generateConfig = () => {
+const generateConfigMetadata = () => {
   const config = {};
 
   config.baseDir = process.argv[2];
@@ -191,10 +186,8 @@ const ensureDirectoriesExist = () => {
   }
 }
 
-const readComponentMappings = () => {
+const initializeComponents = (components) => {
   const fullPathComponents = {};
-
-  const components = JSON.parse(fs.readFileSync(CONFIG.configFile, 'utf-8'));
 
   Object.keys(components).forEach(key => {
     fullPathComponents[key] = `${CONFIG.componentsDir}/${components[key]}`;
@@ -203,11 +196,44 @@ const readComponentMappings = () => {
   COMPONENTS = fullPathComponents;
 }
 
-const run = () => {
-  generateConfig();
-  ensureDirectoriesExist();
-  readComponentMappings();
-  traverseFiles();
+const parseConfigFile = () => {
+
+  const parseConfig = (resolve, reject) => {
+    let file;
+  
+    try {
+      file = fs.readFileSync(CONFIG.configFile, 'utf-8');
+    } catch (e) {
+      console.log(`Unable to read curvature-config.json: ${e}`);
+      reject();
+    }
+
+    const fileContents = JSON.parse(file);
+
+    try {
+
+      if (fileContents.components === undefined) {
+        throw new Error('"components" property missing in curvature-config.json');
+      }
+
+      initializeComponents(fileContents.components);
+    } catch (e) {
+      console.log(`Error determining components: ${e}`);
+      reject();
+    }
+
+    resolve();
+  }
+
+  return new Promise((resolve, reject) => parseConfig(resolve, reject));
 }
 
-run();
+const main = () => {
+  generateConfigMetadata();
+  ensureDirectoriesExist();
+  parseConfigFile()
+  .then(traverseFiles)
+  .catch(() => console.log('Unable to run Curvature in this project'));
+}
+
+main();
