@@ -1,16 +1,10 @@
 const fs = require('fs');
 const mime = require('mime');
 
+const { isHTMLFile, directoryIsIncluded, fileIsIncluded } = require('./utilities')
+
 let CONFIG = null;
 let COMPONENTS = null;
-
-const directoryIsIncluded = (directory) => {
-  return !/components|output|.git/.test(directory);
-}
-
-const fileIsIncluded = (file) => {
-  return !/curvature-config\.json|.gitignore/.test(file);
-}
 
 const getComponentTemplate = (tag) => {
   const componentNameRegex = /(?<=<curvature-).*(?=><)/;
@@ -22,6 +16,7 @@ const getSpaces = (line) => {
   const chars = line.split('')
       let spaces = '';
 
+      // But what if they're tabs???
       chars.forEach(c => {
         if (c === ' ') spaces += ' ';
       });
@@ -31,10 +26,11 @@ const getSpaces = (line) => {
 
 // 2. Look for custom tags
 const parseCustomTags = (file) => {
+  console.log(file);
   // Read the contents of the file
   const data = fs.readFileSync(file, 'utf-8');
 
-  // Look for tags, and parse out relevant name, that follow
+  // Look for tags, and parse out relevant names, that follow
   // the format "<curvature-tag name></curvature-tag name>". This regex will
   // return exclusively the "tag name" part of that tag.
   const customTagRegex = /<curvature-.+><\/curvature-.+>/g;
@@ -123,8 +119,10 @@ const readFile = (filePath) => {
 
 const traverseFiles = (baseDir = CONFIG.baseDir) => {
   // Using the synchronous versions of most methods because recursive
-  // async functions is damn-near impossibe
+  // async functions is darn-near impossibe
   const files = fs.readdirSync(baseDir);
+
+  console.log(files);
 
   files.forEach(file => {
 
@@ -138,8 +136,6 @@ const traverseFiles = (baseDir = CONFIG.baseDir) => {
         // Now we need to open the file, read it, and parse for custom tags
         newContent = parseCustomTags(fullPath);
       } else {
-        // I don't love how readFile() returns the contents and the encoding...
-        // Idk maybe not that bad, but I feel like it could be better.
         const contentAndEncoding = readFile(fullPath);
 
         if (contentAndEncoding) {
@@ -159,12 +155,6 @@ const traverseFiles = (baseDir = CONFIG.baseDir) => {
       }
     }
   });
-}
-
-const isHTMLFile = (file) => {
-  const [name, extension] = file.split('.');
-
-  return extension === 'html';
 }
 
 const generateConfigMetadata = () => {
