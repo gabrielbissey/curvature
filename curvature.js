@@ -2,7 +2,7 @@ const fs = require('fs');
 const mime = require('mime');
 
 const {
-  isHTMLFile, directoryIsIncluded, fileIsIncluded, getSpaces, ensureDirectoriesExist
+  isHTMLFile, directoryIsIncluded, fileIsIncluded, getSpaces, ensureDirectoryExists
 } = require('./helper-files/utilities');
 const {
   generateConfigMetadata, parseCurvatureConfigFile, initializeComponents
@@ -12,9 +12,21 @@ let CONFIG = null;
 let COMPONENTS = null;
 
 const getComponentTemplate = (tag) => {
-  const componentNameRegex = /(?<=<curvature-).*(?=><)/;
+  const componentNameRegex = /(?<=<curvature-).+(?=\/>)/;
+
   const componentName = tag.match(componentNameRegex)[0];
-  return fs.readFileSync(COMPONENTS[componentName], 'utf-8');
+
+  if (!componentName) {
+    throw new Error(`Unable to parse out component from custom tag: ${tag}`);
+  }
+
+  if (COMPONENTS[componentName]) {
+    return fs.readFileSync(COMPONENTS[componentName], 'utf-8');
+  }
+
+  throw new Error(
+    `Component name "${componentName}" not found from component tag "${tag.trim()}". ` +
+    `Please make sure you've registered the component, and that the tag is formatted correctly.`);
 }
 
 // 2. Look for custom tags
@@ -25,7 +37,10 @@ const parseCustomTags = (file) => {
   // Look for tags, and parse out relevant names, that follow
   // the format "<curvature-tag name></curvature-tag name>". This regex will
   // return exclusively the "tag name" part of that tag.
-  const customTagRegex = /<curvature-.+><\/curvature-.+>/g;
+  const customTagRegex = /<curvature-.+\/>/g;
+
+
+
   const dataLines = data.split('\n');
   // iterate through file lines
   let outputLines = [];
@@ -45,6 +60,7 @@ const parseCustomTags = (file) => {
         outputLines.push(spaces + tLine);
       });
     } else {
+      // If the line(s) are not a custom tag, just keep the line that was already there.
       outputLines.push(line);
     }
   });
@@ -73,12 +89,7 @@ const writeToOutputDir = (path, fileName, content, encoding = 'utf-8') => {
     // in output directory
     const outputFilePath = getOutputFilePath(path);
 
-    // Check if directory exists, and make it if not
-    try {
-      fs.accessSync(outputFilePath);
-    } catch {
-      fs.mkdirSync(outputFilePath);
-    }
+    ensureDirectoryExists(outputFilePath);
 
     const outputFile = `${outputFilePath}/${fileName}`;
   
@@ -154,10 +165,10 @@ const handleCurvatureConfigSuccess = (curvatureConfig) => {
 
 const main = () => {
   CONFIG = generateConfigMetadata();
-  ensureDirectoriesExist();
+  ensureDirectoryExists(CONFIG.outputDir);
   parseCurvatureConfigFile(CONFIG.configFile)
   .then(handleCurvatureConfigSuccess)
-  .catch(() => console.log('Unable to run Curvature in this project'));
+  .catch(e => console.log(`Unable to run Curvature in this project: ${e}`));
 }
 
 main();

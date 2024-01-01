@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 const isHTMLFile = (file) => {
   const [name, extension] = file.split('.');
 
@@ -24,11 +26,11 @@ const getSpaces = (line) => {
   return spaces;
 }
 
-const ensureDirectoriesExist = () => {
+const ensureDirectoryExists = (directory) => {
   try {
-    fs.accessSync(CONFIG.outputDir);
+    fs.accessSync(directory);
   } catch {
-    fs.mkdirSync(CONFIG.outputDir);
+    fs.mkdirSync(directory);
   }
 }
 
@@ -36,4 +38,4 @@ exports.isHTMLFile = isHTMLFile;
 exports.directoryIsIncluded = directoryIsIncluded;
 exports.fileIsIncluded = fileIsIncluded;
 exports.getSpaces = getSpaces;
-exports.ensureDirectoriesExist = ensureDirectoriesExist;
+exports.ensureDirectoryExists = ensureDirectoryExists;
