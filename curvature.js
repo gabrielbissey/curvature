@@ -152,7 +152,12 @@ const traverseFiles = (baseDir = CONFIG.baseDir) => {
 
 const handleCurvatureConfigSuccess = (curvatureConfig) => {
   COMPONENTS = initializeComponents(CONFIG.componentsDir, curvatureConfig.components);
-  console.log(detectCircularDependencies(CONFIG.componentsDir, COMPONENTS));
+
+  if (detectCircularDependencies(CONFIG.componentsDir, COMPONENTS) === true) {
+    throw new Error('Circular dependency detected in one of your components')
+  }
+
+
   traverseFiles();
 }
 
@@ -161,7 +166,7 @@ const main = () => {
   ensureDirectoryExists(CONFIG.outputDir);
   parseCurvatureConfigFile(CONFIG.configFile)
   .then(handleCurvatureConfigSuccess)
-  .catch(e => console.log(`Unable to run Curvature in this project: ${e}`));
+  .catch(e => console.log(`Unable to run Curvature: ${e}`));
 }
 
 main();

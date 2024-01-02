@@ -71,6 +71,19 @@ const getComponentName = (file, componentMappings) => {
 }
 
 const detectCircularDependenciesInFile = (directory, file, componentMappings, visitedComponents = []) => {
+  // We need to copy over the visited components array because otherwise the array is
+  // shared among all recursive calls (which is desirable in some recursive algorithms,
+  // but not in our case). We DONT want this because, let's say component A contains component B
+  // and component C. Additionally, component B also contains component C. If the visited components
+  // array is shared among all recursive calls, when we visit component C for the first time from
+  // component B (we're doing a depth first search by nature of recursion), that will mark component C
+  // as visited. Then, when we see component C again from component A, we'll see that component C has
+  // been visited, and this algorithm will falsely say that there is a circular dependency.
+  //
+  // By making a copy of the visited components array, we keep the ancestral history of our
+  // depth first search, but we get rid of our shared array. Therefore, each time this function is
+  // called, the visited components array is guaranteed to contain ancestors exclusively.
+  visitedComponents = [...visitedComponents];
 
   const componentName = getComponentName(file, componentMappings);
 
@@ -101,11 +114,7 @@ const detectCircularDependenciesInFile = (directory, file, componentMappings, vi
 
   const nestedComponents = data.match(componentNameRegex);
 
-  // check if nested components are present in the visited components list
-  // if so return true
-
   let alreadyVisited = false;
-
   if (nestedComponents === null || nestedComponents === undefined) {
     // No nested components found, and therefore a circular dependency cannot exist.
     return false;
@@ -136,6 +145,8 @@ const detectCircularDependenciesInFile = (directory, file, componentMappings, vi
 
     const componentFile = componentMappings[component];
 
+    // By virture of this recursive descention, we're arguably doing a depth-first
+    // search.
     circularDependencyDetected = detectCircularDependenciesInFile(
       null, componentFile, componentMappings, visitedComponents);
 
