@@ -7,6 +7,7 @@ const {
 const {
   generateConfigMetadata, parseCurvatureConfigFile, initializeComponents
 } = require('./helper-files/config');
+const { detectCircularDependencies } = require('./helper-files/circular-dependency-detector');
 
 let CONFIG = null;
 let COMPONENTS = null;
@@ -31,27 +32,18 @@ const getComponentTemplate = (tag) => {
 
 // 2. Look for custom tags
 const parseCustomTags = (file) => {
-  // Read the contents of the file
   const data = fs.readFileSync(file, 'utf-8');
 
   // Look for tags, and parse out relevant names, that follow
-  // the format "<curvature-tag name></curvature-tag name>". This regex will
-  // return exclusively the "tag name" part of that tag.
+  // the format "<curvature-tag name/>".
   const customTagRegex = /<curvature-.+\/>/g;
 
-
-
   const dataLines = data.split('\n');
-  // iterate through file lines
   let outputLines = [];
 
   dataLines.forEach(line => {
 
-    // This assumes that the opening and closing tag for the component
-    // are on the same line. If they're on broken up lines, then this
-    // will insert the template content twice... need to address this
     if (line.match(customTagRegex)) {
-
       const spaces = getSpaces(line);
       const template = getComponentTemplate(line);
       const templateLines = template.split('\n');
@@ -160,6 +152,7 @@ const traverseFiles = (baseDir = CONFIG.baseDir) => {
 
 const handleCurvatureConfigSuccess = (curvatureConfig) => {
   COMPONENTS = initializeComponents(CONFIG.componentsDir, curvatureConfig.components);
+  console.log(detectCircularDependencies(CONFIG.componentsDir, COMPONENTS));
   traverseFiles();
 }
 
