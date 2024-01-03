@@ -5,7 +5,7 @@ const generateConfigMetadata = () => {
 
   config.baseDir = process.argv[2];
   config.configFile = `${config.baseDir}/curvature-config.json`
-  config.outputDir = `${config.baseDir}/output`;
+  config.outputDir = `${config.baseDir}/curvature-output`;
   config.componentsDir = `${config.baseDir}/components`;
 
   return config;

@@ -73,7 +73,7 @@ Once you have done everything specified for creating/configuring components, you
 node <path to this repo>/curvature <path to your curvature project>
 ```
 
-After running Curvature, you should find an `output` directory generated in your project. This directory is an exact copy of your project, just with all your components being interpolated. This is finished code now!
+After running Curvature, you should find a `curvature-output` directory generated in your project. This directory is an exact copy of your project, just with all your components being interpolated. This is finished code now!
 
 ## Curvature Project Structure
 Curvature can be as simple or complex as you'd like. At a minimum, your project needs to have these things:
