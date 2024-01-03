@@ -152,13 +152,13 @@ const traverseFiles = (baseDir = CONFIG.baseDir) => {
 
 const handleCurvatureConfigSuccess = (curvatureConfig) => {
   COMPONENTS = initializeComponents(CONFIG.componentsDir, curvatureConfig.components);
+  const circularDependencies = detectCircularDependencies(CONFIG.componentsDir, COMPONENTS);
 
-  if (detectCircularDependencies(CONFIG.componentsDir, COMPONENTS) === true) {
-    throw new Error('Circular dependency detected in one of your components')
+  if (circularDependencies === false) {
+    traverseFiles();
+  } else {
+    throw new Error(`Circular dependency detected in one of your components: ${circularDependencies}`);
   }
-
-
-  traverseFiles();
 }
 
 const main = () => {

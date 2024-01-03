@@ -1,73 +1,56 @@
 const fs = require('fs');
 
-
-
-/**
- * Consider a graph like
- * 
- * a -> b -> a
- * a: [b],
- * b: [a]
- * 
- * this graph has a circular depencency
- * 
- * All we have to do to detect this is implement a depth first search,
- * or breadth first search (I think breadth first is better), and for
- * every node we visit, we add it to a visited array. Then, if we see a
- * new node that is in said visited array, we know we've seen this node
- * before, and a circular dependency has then been detected.
- * 
- * Perform the following steps for all components
- * 1. Construct a graph (adjacency list) for each component
- * 
- * 2. Implement a breadth first search, keeping track of which
- * components we've vited
- * 
- * 3. Return boolean indicating whether a circular dependency has been
- * detected or not
- * 
- * 
- * 
- * 
- */
-
 const detectCircularDependencies = (directoryToCheck, componentMappings) => {
   const files = fs.readdirSync(directoryToCheck);
-
+  let circularDependency;
   
-  // Keep a running boolean for if a circular dependency has been
-  // detected or not
-  let circularDependencyDetected = false;
-  
-  
-  // Iterate through all files in directory
-
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
 
-    if (detectCircularDependenciesInFile(directoryToCheck, file, componentMappings) === true) {
-      circularDependencyDetected = true;
+    circularDependency = detectCircularDependenciesInFile(
+      directoryToCheck, file, componentMappings);
+
+    // If the dependency is a string, then it's a string representing the dependency
+    // that was found. If it's a boolean, then it's false, indicating no curcular
+    // dependency.
+    if (typeof circularDependency === 'string') {
       break;
     }
   }
 
-  return circularDependencyDetected;
+  return circularDependency;
 }
 
 const getComponentName = (file, componentMappings) => {
   let foundComponentName;
 
   Object.entries(componentMappings).forEach(([componentName, componentFilePath]) => {
-
     if (componentFilePath.includes(file)) {
       foundComponentName = componentName;
     }
-
-
   });
 
   return foundComponentName;
+}
 
+const formatFilePath = (directory, file) => {
+  if (directory === null) {
+    return file;
+  }
+
+  return `${directory}/${file}`;
+}
+
+const formatCircularDependencyGraph = (ancestorComponents, component) => {
+  let graph = '';
+
+  ancestorComponents.forEach(ancestor => {
+    graph += `${ancestor} --> `;
+  });
+
+  graph += component;
+
+  return graph;
 }
 
 const detectCircularDependenciesInFile = (directory, file, componentMappings, visitedComponents = []) => {
@@ -90,18 +73,10 @@ const detectCircularDependenciesInFile = (directory, file, componentMappings, vi
   if (!visitedComponents.includes(componentName)) {
     visitedComponents.push(componentName);
   } else {
-    return true;
+    return formatCircularDependencyGraph(visitedComponents, componentName);
   }
 
-  let filePath;
-
-  if (directory === null) {
-    filePath = file;
-  } else {
-    filePath = `${directory}/${file}`;
-  }
-
-  // Read in file contents
+  const filePath = formatFilePath(directory, file);
   const data = fs.readFileSync(filePath, 'utf-8');
 
   if (data === undefined) {
@@ -110,11 +85,9 @@ const detectCircularDependenciesInFile = (directory, file, componentMappings, vi
 
   // Parse file for any component tags
   const componentNameRegex = /(?<=<curvature-).+(?=\/>)/g;
-
-
   const nestedComponents = data.match(componentNameRegex);
-
   let alreadyVisited = false;
+  
   if (nestedComponents === null || nestedComponents === undefined) {
     // No nested components found, and therefore a circular dependency cannot exist.
     return false;
@@ -122,23 +95,16 @@ const detectCircularDependenciesInFile = (directory, file, componentMappings, vi
     nestedComponents.forEach(component => {
 
       if (visitedComponents.includes(component) === true) {
-        alreadyVisited = true;
+        alreadyVisited = component;
       }
-  
     });
   
-    if (alreadyVisited === true) {
-  
-      return true;
+    if (typeof alreadyVisited === 'string') {
+      return formatCircularDependencyGraph(visitedComponents, alreadyVisited);
     }
   }
 
-
-
-
-
   let circularDependencyDetected = false;
-
 
   for (let i = 0; i < nestedComponents.length; i++) {
     component = nestedComponents[i];
@@ -150,7 +116,7 @@ const detectCircularDependenciesInFile = (directory, file, componentMappings, vi
     circularDependencyDetected = detectCircularDependenciesInFile(
       null, componentFile, componentMappings, visitedComponents);
 
-    if (circularDependencyDetected === true) {
+    if (typeof circularDependencyDetected === 'string') {
       break;
     }
   }
