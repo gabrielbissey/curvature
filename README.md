@@ -78,7 +78,7 @@ After running Curvature, you should find a `curvature-output` directory generate
 ## Curvature Project Structure
 Curvature can be as simple or complex as you'd like. At a minimum, your project needs to have these things:
 ```
-| - curvature-config.js
+| - curvature-config.json
 | - /components
   | - example-component1.html
   | - example-component2.html
